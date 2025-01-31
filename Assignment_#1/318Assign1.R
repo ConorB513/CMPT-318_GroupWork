@@ -87,8 +87,9 @@ print(cor_matrix)
 ggcorrplot(cor_matrix, lab = TRUE, title = "Household Electricity Consumption Correlation Matrix")
 
 # ----- QUESTION 3 -----
-#weekday morning dataframe:
-weekday_morning_df <- data.frame(
+
+#weekday daytime dataframe:
+weekday_daytime_df <- data.frame(
   Time      = one_week_data1$Time[one_week_data1$Date == as.Date("2007-02-12") & one_week_data1$Time >= "07:00:00" & one_week_data1$Time <= "17:00:00"], 
   Monday    = one_week_data1 %>% filter(Date == as.Date("2007-02-12") & Time >= "07:00:00" & Time <= "17:00:00") %>% pull(Global_intensity),
   Tuesday   = one_week_data1 %>% filter(Date == as.Date("2007-02-13") & Time >= "07:00:00" & Time <= "17:00:00") %>% pull(Global_intensity),
@@ -97,21 +98,21 @@ weekday_morning_df <- data.frame(
   Friday    = one_week_data1 %>% filter(Date == as.Date("2007-02-16") & Time >= "07:00:00" & Time <= "17:00:00") %>% pull(Global_intensity)
 )
 
-weekday_morning_avg_df <- data.frame(
-  Time = weekday_morning_df$Time,  # Keep the same time column
-  Weekday_Morning_Avg = rowMeans(weekday_morning_df[, 2:6], na.rm = TRUE)  # Compute row-wise mean for Monday - Friday
+weekday_daytime_avg_df <- data.frame(
+  Time = weekday_daytime_df$Time,  # Keep the same time column
+  Weekday_Daytime_Avg = rowMeans(weekday_daytime_df[, 2:6], na.rm = TRUE)  # Compute row-wise mean for Monday - Friday
 )
 
-#weekend morning datafram:
-weekend_morning_df <- data.frame(
-  Time      = one_week_data1$Time[one_week_data1$Date == as.Date("2007-02-12") & one_week_data1$Time >= "07:00:00" & one_week_data1$Time <= "17:00:00"], # Extract time for morning hours
+#weekend daytime datafram:
+weekend_daytime_df <- data.frame(
+  Time      = one_week_data1$Time[one_week_data1$Date == as.Date("2007-02-12") & one_week_data1$Time >= "07:00:00" & one_week_data1$Time <= "17:00:00"],
   Saturday  = one_week_data1 %>% filter(Date == as.Date("2007-02-17") & Time >= "07:00:00" & Time <= "17:00:00") %>% pull(Global_intensity),
   Sunday    = one_week_data1 %>% filter(Date == as.Date("2007-02-18") & Time >= "07:00:00" & Time <= "17:00:00") %>% pull(Global_intensity)
 )
 
-weekend_morning_avg_df <- data.frame(
-  Time = weekend_morning_df$Time,  # Keep the same time column
-  Weekend_Morning_Avg = rowMeans(weekend_morning_df[, 2:3], na.rm = TRUE)  # Compute row-wise mean for Monday - Friday
+weekend_daytime_avg_df <- data.frame(
+  Time = weekend_daytime_df$Time, 
+  Weekend_Daytime_Avg = rowMeans(weekend_daytime_df[, 2:3], na.rm = TRUE)
 )
 
 #weekday night dataframe:
@@ -125,38 +126,38 @@ weekday_night_df <- data.frame(
 )
 
 weekday_night_avg_df <- data.frame(
-  Time = weekday_night_df$Time,  # Keep the same time column
-  Weekday_night_Avg = rowMeans(weekday_night_df[, 2:6], na.rm = TRUE)  # Compute row-wise mean for Monday - Friday
+  Time = weekday_night_df$Time, 
+  Weekday_night_Avg = rowMeans(weekday_night_df[, 2:6], na.rm = TRUE)
 )
 
 #weekend night datafram:
 weekend_night_df <- data.frame(
-  Time      = one_week_data1$Time[one_week_data1$Date == as.Date("2007-02-12") & one_week_data1$Time >= "17:01:00" & one_week_data1$Time <= "23:59:00"], # Extract time for morning hours
+  Time      = one_week_data1$Time[one_week_data1$Date == as.Date("2007-02-12") & one_week_data1$Time >= "17:01:00" & one_week_data1$Time <= "23:59:00"],
   Saturday  = one_week_data1 %>% filter(Date == as.Date("2007-02-17") & Time >= "17:01:00" & Time <= "23:59:00") %>% pull(Global_intensity),
   Sunday    = one_week_data1 %>% filter(Date == as.Date("2007-02-18") & Time >= "17:01:00" & Time <= "23:59:00") %>% pull(Global_intensity)
 )
 
 weekend_night_avg_df <- data.frame(
-  Time = weekday_night_df$Time,  # Keep the same time column
-  Weekend_night_Avg = rowMeans(weekend_night_df[, 2:3], na.rm = TRUE)  # Compute row-wise mean for Monday - Friday
+  Time = weekday_night_df$Time, 
+  Weekend_night_Avg = rowMeans(weekend_night_df[, 2:3], na.rm = TRUE)
 )
 
 
-#morning plot:
-morning_plot_data <- data.frame(
-  Time = weekday_morning_avg_df$Time,
-  Weekday_Morning_Avg = weekday_morning_avg_df$Weekday_Morning_Avg,
-  Weekend_Morning_Avg = weekend_morning_avg_df$Weekend_Morning_Avg
+#daytime plot:
+daytime_plot_data <- data.frame(
+  Time = weekday_daytime_avg_df$Time,
+  Weekday_Daytime_Avg = weekday_daytime_avg_df$Weekday_Daytime_Avg,
+  Weekend_Daytime_Avg = weekend_daytime_avg_df$Weekend_Daytime_Avg
 )
 
 #ensure time format
-morning_plot_data$Time <- as.POSIXct(morning_plot_data$Time, format="%H:%M:%S")
+daytime_plot_data$Time <- as.POSIXct(daytime_plot_data$Time, format="%H:%M:%S")
 
 # Reshape data to long format for ggplot
-morning_plot_data_long <- tidyr::pivot_longer(morning_plot_data, cols = c("Weekday_Morning_Avg", "Weekend_Morning_Avg"), names_to = "Type", values_to = "Avg")
+daytime_plot_data_long <- tidyr::pivot_longer(daytime_plot_data, cols = c("Weekday_Daytime_Avg", "Weekend_Daytime_Avg"), names_to = "Type", values_to = "Avg")
 
-#plot morning using ggplot
-ggplot(morning_plot_data_long, aes(x = Time, y = Avg, color = Type)) +
+#plot daytime using ggplot
+ggplot(daytime_plot_data_long, aes(x = Time, y = Avg, color = Type)) +
   #dot plot
   geom_point(alpha = 0.6, size = 2) + 
   # Linear regression lines
@@ -164,11 +165,11 @@ ggplot(morning_plot_data_long, aes(x = Time, y = Avg, color = Type)) +
   # Polynomial regression lines (degree 3 for some curvature)
   geom_smooth(method = "lm", formula = y ~ poly(x, 3), se = FALSE, aes(linetype = "Polynomial"), size = 1) +
   #set colours
-  scale_color_manual(values = c("Weekday_Morning_Avg" = "blue", "Weekend_Morning_Avg" = "red")) +
+  scale_color_manual(values = c("Weekday_Daytime_Avg" = "blue", "Weekend_Daytime_Avg" = "red")) +
   # Custom line types for legend
   scale_linetype_manual(values = c("Linear" = "dashed", "Polynomial" = "solid")) +
   # create legend
-  labs(title = "Weekday vs. Weekend Morning Average Global Intensity", x = "Time", y = "Average Global Intensity",  linetype = "Regression Type")
+  labs(title = "Weekday vs. Weekend Daytime Average Global Intensity", x = "Time", y = "Average Global Intensity",  linetype = "Regression Type")
 
 #night plot:
 night_plot_data <- data.frame(
@@ -181,7 +182,7 @@ night_plot_data <- data.frame(
 night_plot_data$Time <- as.POSIXct(night_plot_data$Time, format="%H:%M:%S")
 
 # Reshape data for ggplot
-night_plot_data_long <- pivot_longer(night_plot_data, cols = c("Weekday_Night_Avg", "Weekend_Night_Avg"), names_to = "Type", values_to = "Avg")
+night_plot_data_long <- tidyr::pivot_longer(night_plot_data, cols = c("Weekday_Night_Avg", "Weekend_Night_Avg"), names_to = "Type", values_to = "Avg")
 
 # Create dot plot
 ggplot(night_plot_data_long, aes(x = Time, y = Avg, color = Type)) +
