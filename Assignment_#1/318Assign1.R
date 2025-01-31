@@ -21,7 +21,7 @@ one_week_data1 <- dataset %>% filter(Date >= as.Date("2007-02-12") & Date <= as.
 
 # ----- QUESTION 1 -----
 
-#Use approz to do linear interpolation
+#Use approx to do linear interpolation
 one_week_data1[,c("Global_reactive_power")] <- na.approx(one_week_data1[,c("Global_reactive_power")]);
 one_week_data1[,c("Global_active_power")] <- na.approx(one_week_data1[,c("Global_active_power")]);
 one_week_data1[,c("Voltage")] <- na.approx(one_week_data1[,c("Voltage")]);
@@ -103,7 +103,7 @@ weekday_daytime_avg_df <- data.frame(
   Weekday_Daytime_Avg = rowMeans(weekday_daytime_df[, 2:6], na.rm = TRUE)  # Compute row-wise mean for Monday - Friday
 )
 
-#weekend daytime datafram:
+#weekend daytime dataframe:
 weekend_daytime_df <- data.frame(
   Time      = one_week_data1$Time[one_week_data1$Date == as.Date("2007-02-12") & one_week_data1$Time >= "07:00:00" & one_week_data1$Time <= "17:00:00"],
   Saturday  = one_week_data1 %>% filter(Date == as.Date("2007-02-17") & Time >= "07:00:00" & Time <= "17:00:00") %>% pull(Global_intensity),
@@ -161,7 +161,7 @@ ggplot(daytime_plot_data_long, aes(x = Time, y = Avg, color = Type)) +
   #dot plot
   geom_point(alpha = 0.6, size = 2) + 
   # Linear regression lines
-  geom_smooth(method = "lm", se = FALSE, aes(linetype = "Linear"), size = 1) +
+  geom_smooth(method = "lm", se = FALSE, aes(linetype = "Linear"), linewidth = 1) +
   # Polynomial regression lines (degree 3 for some curvature)
   geom_smooth(method = "lm", formula = y ~ poly(x, 3), se = FALSE, aes(linetype = "Polynomial"), size = 1) +
   #set colours
@@ -191,7 +191,7 @@ ggplot(night_plot_data_long, aes(x = Time, y = Avg, color = Type)) +
   # Linear regression lines
   geom_smooth(method = "lm", se = FALSE, aes(linetype = "Linear"), size = 1) +
   # Polynomial regression lines (degree 3 for some curvature)
-  geom_smooth(method = "lm", formula = y ~ poly(x, 3), se = FALSE, aes(linetype = "Polynomial"), size = 1) +
+  geom_smooth(method = "lm", formula = y ~ poly(x, 3), se = FALSE, aes(linetype = "Polynomial"), linewidth = 1) +
   #set colours
   scale_color_manual(values = c("Weekday_Night_Avg" = "blue", "Weekend_Night_Avg" = "red")) +
   #create legend
