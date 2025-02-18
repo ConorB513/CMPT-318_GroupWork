@@ -1,1 +1,1 @@
-CMPT 318 - Group7 Group Work
+CMPT 318 - Group7 Work
