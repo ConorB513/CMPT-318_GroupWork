@@ -19,7 +19,7 @@ dataset$Date <- as.Date(dataset$Date, format="%d/%m/%Y")
 #Extract Tuesdays from 2-8 am data
 tuesdaysData <- dataset  %>% filter(
   weekdays(as.Date(Date)) == "Tuesday",
-  Time >= "02:00:00" & Time <= "08:00:00")
+  Time >= "02:00:00" & Time <= "07:59:00")
 
 tuesdayGlobalActivePower <- tuesdaysData$Global_active_power
 
@@ -32,7 +32,7 @@ tuesdayGlobalActivePower <- data.frame(Global_active_power = tuesdayGlobalActive
 model <- depmix(response = Global_active_power ~ 1
                 , data = tuesdayGlobalActivePower, 
                 nstates = 4, 
-                ntimes = rep(361,52))
+                ntimes = rep(360,52))
 
 fitModel <- fit(model)
 BIC(fitModel)
@@ -45,7 +45,7 @@ print(summary(fitModel))
 model <- depmix(response = Global_active_power ~ 1
                 , data = tuesdayGlobalActivePower, 
                 nstates = 6, 
-                ntimes = rep(361,52))
+                ntimes = rep(360,52))
 
 fitModel <- fit(model)
 BIC(fitModel)
@@ -58,7 +58,7 @@ print(summary(fitModel))
 model <- depmix(response = Global_active_power ~ 1
                 , data = tuesdayGlobalActivePower, 
                 nstates = 8, 
-                ntimes = rep(361,52))
+                ntimes = rep(360,52))
 
 fitModel <- fit(model)
 BIC(fitModel)
@@ -71,7 +71,7 @@ print(summary(fitModel))
 model <- depmix(response = Global_active_power ~ 1
                 , data = tuesdayGlobalActivePower, 
                 nstates = 10, 
-                ntimes = rep(361,52))
+                ntimes = rep(360,52))
 
 fitModel <- fit(model)
 BIC(fitModel)
@@ -84,7 +84,7 @@ print(summary(fitModel))
 model <- depmix(response = Global_active_power ~ 1
                 , data = tuesdayGlobalActivePower, 
                 nstates = 12, 
-                ntimes = rep(361,52))
+                ntimes = rep(360,52))
 
 fitModel <- fit(model)
 BIC(fitModel)
@@ -98,7 +98,7 @@ print(summary(fitModel))
 model <- depmix(response = Global_active_power ~ 1
                 , data = tuesdayGlobalActivePower, 
                 nstates = 14, 
-                ntimes = rep(361,52))
+                ntimes = rep(360,52))
 
 fitModel <- fit(model)
 BIC(fitModel)
@@ -110,7 +110,7 @@ print(summary(fitModel))
 model <- depmix(response = Global_active_power ~ 1
                 , data = tuesdayGlobalActivePower, 
                 nstates = 16, 
-                ntimes = rep(361,52))
+                ntimes = rep(360,52))
 
 fitModel <- fit(model)
 BIC(fitModel)
@@ -118,6 +118,16 @@ print(summary(fitModel))
 
 
 
+# --- 25 states -----
+
+model <- depmix(response = Global_active_power ~ 1
+                , data = tuesdayGlobalActivePower, 
+                nstates = 25, 
+                ntimes = rep(360,52))
+
+fitModel <- fit(model)
+BIC(fitModel)
+print(summary(fitModel))
 
 
 
