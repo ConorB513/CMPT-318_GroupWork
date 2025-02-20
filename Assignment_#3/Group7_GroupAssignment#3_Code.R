@@ -1,85 +1,120 @@
 
 
 install.packages("depmixS4")
+install.packages("dplyr")
+
+
+library(dplyr)
 library(depmixS4)
 
 
 
-# import dataset
+# import Dataset
 dataset <- read.csv("./Group_Assignment_Dataset.txt", header = TRUE)
 
 
 #convert to date format
 dataset$Date <- as.Date(dataset$Date, format="%d/%m/%Y")
 
-#Extract tuesdays from 2-8 am data
-tuesdaysData <- subset(data, format(DateTime, "%A") == "Tuesday" & 
-                      format(DateTime, "%H") >= "02" & format(DateTime, "%H") < "08")
+#Extract Tuesdays from 2-8 am data
+tuesdaysData <- dataset  %>% filter(
+  weekdays(as.Date(Date)) == "Tuesday",
+  Time >= "02:00:00" & Time <= "08:00:00")
 
-
-#Extract the global active power on tuesdays from 2-8 am 
 tuesdayGlobalActivePower <- tuesdaysData$Global_active_power
 
-
-#Start in steps of 2 states
-state_range <- seq(4, 16, by = 2)
-
-# Store the log likelihood and bic values in vectors
-log_likelihoods <- numeric(7)
-bic_values <- numeric(7)
+#Extract the global active power on Tuesdays from 2-8 am 
+tuesdayGlobalActivePower <- data.frame(Global_active_power = tuesdayGlobalActivePower)
 
 
 
 # --- 4 states -----
-model <- depmix(response = Global_Active_Power ~ 1
+model <- depmix(response = Global_active_power ~ 1
                 , data = tuesdayGlobalActivePower, 
                 nstates = 4, 
-                ntimes = 52)
+                ntimes = rep(361,52))
 
 fitModel <- fit(model)
-summary(fitModel)
+BIC(fitModel)
+print(summary(fitModel))
+
 
 
 # --- 6 states -----
 
+model <- depmix(response = Global_active_power ~ 1
+                , data = tuesdayGlobalActivePower, 
+                nstates = 6, 
+                ntimes = rep(361,52))
 
+fitModel <- fit(model)
+BIC(fitModel)
+print(summary(fitModel))
 
 
 
 # --- 8 states -----
 
+model <- depmix(response = Global_active_power ~ 1
+                , data = tuesdayGlobalActivePower, 
+                nstates = 8, 
+                ntimes = rep(361,52))
 
-
-
+fitModel <- fit(model)
+BIC(fitModel)
+print(summary(fitModel))
 
 
 
 # --- 10 states -----
 
+model <- depmix(response = Global_active_power ~ 1
+                , data = tuesdayGlobalActivePower, 
+                nstates = 10, 
+                ntimes = rep(361,52))
 
-
+fitModel <- fit(model)
+BIC(fitModel)
+print(summary(fitModel))
 
 
 
 # --- 12 states -----
 
+model <- depmix(response = Global_active_power ~ 1
+                , data = tuesdayGlobalActivePower, 
+                nstates = 12, 
+                ntimes = rep(361,52))
 
+fitModel <- fit(model)
+BIC(fitModel)
+print(summary(fitModel))
 
 
 
 # --- 14 states -----
 
 
+model <- depmix(response = Global_active_power ~ 1
+                , data = tuesdayGlobalActivePower, 
+                nstates = 14, 
+                ntimes = rep(361,52))
 
-
-
-
-
+fitModel <- fit(model)
+BIC(fitModel)
+print(summary(fitModel))
 
 
 # --- 16 states -----
 
+model <- depmix(response = Global_active_power ~ 1
+                , data = tuesdayGlobalActivePower, 
+                nstates = 16, 
+                ntimes = rep(361,52))
 
+fitModel <- fit(model)
+BIC(fitModel)
+print(summary(fitModel))
 
 
 
