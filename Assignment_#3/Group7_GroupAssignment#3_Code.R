@@ -3,8 +3,11 @@
 # Install needed packages
 install.packages("depmixS4")
 install.packages("dplyr")
+install.packages("ggplot2")
+
 library(dplyr)
 library(depmixS4)
+library(ggplot2)
 
 # import Dataset
 dataset <- read.csv("./Group_Assignment_Dataset.txt", header = TRUE)
@@ -21,6 +24,10 @@ tuesdaysData <- dataset  %>% filter(
 tuesdayGlobalActivePower <- tuesdaysData$Global_active_power
 tuesdayGlobalActivePower <- data.frame(Global_active_power = tuesdayGlobalActivePower)
 
+numOfStates <- c(4, 6, 8, 10, 11, 12, 13, 14, 16)
+logValues <- c()
+bicValues <- c()
+
 # ----- Question 1 -----
 
 # Train model using depmix for different number of states to find optimal n
@@ -32,7 +39,11 @@ model <- depmix(response = Global_active_power ~ 1
                 ntimes = rep(180,52))
 
 fitModel <- fit(model)
-BIC(fitModel)
+logValues <- append(logValues, logLik(fitModel))
+
+bicVal <- BIC(fitModel)
+bicValues <- append(bicValues, bicVal)
+
 print(summary(fitModel))
 
 
@@ -43,7 +54,11 @@ model <- depmix(response = Global_active_power ~ 1
                 ntimes = rep(180,52))
 
 fitModel <- fit(model)
-BIC(fitModel)
+logValues <- append(logValues, logLik(fitModel))
+
+bicVal <- BIC(fitModel)
+bicValues <- append(bicValues, bicVal)
+
 print(summary(fitModel))
 
 
@@ -54,7 +69,11 @@ model <- depmix(response = Global_active_power ~ 1
                 ntimes = rep(180,52))
 
 fitModel <- fit(model)
-BIC(fitModel)
+logValues <- append(logValues, logLik(fitModel))
+
+bicVal <- BIC(fitModel)
+bicValues <- append(bicValues, bicVal)
+
 print(summary(fitModel))
 
 
@@ -65,7 +84,11 @@ model <- depmix(response = Global_active_power ~ 1
                 ntimes = rep(180,52))
 
 fitModel <- fit(model)
-BIC(fitModel)
+logValues <- append(logValues, logLik(fitModel))
+
+bicVal <- BIC(fitModel)
+bicValues <- append(bicValues, bicVal)
+
 print(summary(fitModel))
 
 
@@ -76,7 +99,11 @@ model <- depmix(response = Global_active_power ~ 1
                 ntimes = rep(180,52))
 
 fitModel <- fit(model)
-BIC(fitModel)
+logValues <- append(logValues, logLik(fitModel))
+
+bicVal <- BIC(fitModel)
+bicValues <- append(bicValues, bicVal)
+
 print(summary(fitModel))
 
 # --- 12 states -----
@@ -89,8 +116,13 @@ model <- depmix(response = Global_active_power ~ 1
                 ntimes = rep(180,52))
 
 fitModel <- fit(model)
-BIC(fitModel)
+logValues <- append(logValues, logLik(fitModel))
+
+bicVal <- BIC(fitModel)
+bicValues <- append(bicValues, bicVal)
+
 print(summary(fitModel))
+
 
 # --- 13 states -----
 model <- depmix(response = Global_active_power ~ 1
@@ -99,7 +131,11 @@ model <- depmix(response = Global_active_power ~ 1
                 ntimes = rep(180,52))
 
 fitModel <- fit(model)
-BIC(fitModel)
+logValues <- append(logValues, logLik(fitModel))
+
+bicVal <- BIC(fitModel)
+bicValues <- append(bicValues, bicVal)
+
 print(summary(fitModel))
 
 
@@ -110,7 +146,11 @@ model <- depmix(response = Global_active_power ~ 1
                 ntimes = rep(180,52))
 
 fitModel <- fit(model)
-BIC(fitModel)
+logValues <- append(logValues, logLik(fitModel))
+
+bicVal <- BIC(fitModel)
+bicValues <- append(bicValues, bicVal)
+
 print(summary(fitModel))
 
 
@@ -121,8 +161,23 @@ model <- depmix(response = Global_active_power ~ 1
                 ntimes = rep(180,52))
 
 fitModel <- fit(model)
-BIC(fitModel)
+logValues <- append(logValues, logLik(fitModel))
+
+bicVal <- BIC(fitModel)
+bicValues <- append(bicValues, bicVal)
+
 print(summary(fitModel))
+
+# Plot log-likelihood and BIC values
+ggplot(data.frame(numOfStates, logValues), aes(x = numOfStates, y = logValues)) + 
+  geom_line() + geom_point() +
+  labs(title = "Log-likelihood vs. Number of States", x = "Number of States", y = "Log-likelihood") + 
+  theme_minimal()
+
+ggplot(data.frame(numOfStates, bicValues), aes(x = numOfStates, y = bicValues)) + 
+  geom_line() + geom_point() +
+  labs(title = "BIC vs. Number of States", x = "Number of States", y = "BIC") + 
+  theme_minimal()
 
 # ----- Question 2 -----
 
