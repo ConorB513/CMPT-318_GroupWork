@@ -41,10 +41,11 @@ model <- depmix(response = Global_active_power ~ 1
 fitModel <- fit(model)
 logValues <- append(logValues, logLik(fitModel))
 
+BIC(fitModel)
+print(summary(fitModel))
+
 bicVal <- BIC(fitModel)
 bicValues <- append(bicValues, bicVal)
-
-print(summary(fitModel))
 
 
 # --- 6 states -----
@@ -56,10 +57,12 @@ model <- depmix(response = Global_active_power ~ 1
 fitModel <- fit(model)
 logValues <- append(logValues, logLik(fitModel))
 
+BIC(fitModel)
+print(summary(fitModel))
+
 bicVal <- BIC(fitModel)
 bicValues <- append(bicValues, bicVal)
 
-print(summary(fitModel))
 
 
 # --- 8 states -----
@@ -71,10 +74,12 @@ model <- depmix(response = Global_active_power ~ 1
 fitModel <- fit(model)
 logValues <- append(logValues, logLik(fitModel))
 
+BIC(fitModel)
+print(summary(fitModel))
+
 bicVal <- BIC(fitModel)
 bicValues <- append(bicValues, bicVal)
 
-print(summary(fitModel))
 
 
 # --- 10 states -----
@@ -86,10 +91,12 @@ model <- depmix(response = Global_active_power ~ 1
 fitModel <- fit(model)
 logValues <- append(logValues, logLik(fitModel))
 
+BIC(fitModel)
+print(summary(fitModel))
+
 bicVal <- BIC(fitModel)
 bicValues <- append(bicValues, bicVal)
 
-print(summary(fitModel))
 
 
 # --- 11 states -----
@@ -101,15 +108,15 @@ model <- depmix(response = Global_active_power ~ 1
 fitModel <- fit(model)
 logValues <- append(logValues, logLik(fitModel))
 
+BIC(fitModel)
+print(summary(fitModel))
+
 bicVal <- BIC(fitModel)
 bicValues <- append(bicValues, bicVal)
 
-print(summary(fitModel))
 
 # --- 12 states -----
-# Optimal state count for continous data
-# LogLik: 10247.78 
-# BIC: -18968.49
+
 model <- depmix(response = Global_active_power ~ 1
                 , data = tuesdayGlobalActivePower, 
                 nstates = 12, 
@@ -118,10 +125,12 @@ model <- depmix(response = Global_active_power ~ 1
 fitModel <- fit(model)
 logValues <- append(logValues, logLik(fitModel))
 
+BIC(fitModel)
+print(summary(fitModel))
+
 bicVal <- BIC(fitModel)
 bicValues <- append(bicValues, bicVal)
 
-print(summary(fitModel))
 
 
 # --- 13 states -----
@@ -133,10 +142,12 @@ model <- depmix(response = Global_active_power ~ 1
 fitModel <- fit(model)
 logValues <- append(logValues, logLik(fitModel))
 
+BIC(fitModel)
+print(summary(fitModel))
+
 bicVal <- BIC(fitModel)
 bicValues <- append(bicValues, bicVal)
 
-print(summary(fitModel))
 
 
 # --- 14 states -----
@@ -148,10 +159,12 @@ model <- depmix(response = Global_active_power ~ 1
 fitModel <- fit(model)
 logValues <- append(logValues, logLik(fitModel))
 
+BIC(fitModel)
+print(summary(fitModel))
+
 bicVal <- BIC(fitModel)
 bicValues <- append(bicValues, bicVal)
 
-print(summary(fitModel))
 
 
 # --- 16 states -----
@@ -163,10 +176,12 @@ model <- depmix(response = Global_active_power ~ 1
 fitModel <- fit(model)
 logValues <- append(logValues, logLik(fitModel))
 
+BIC(fitModel)
+print(summary(fitModel))
+
 bicVal <- BIC(fitModel)
 bicValues <- append(bicValues, bicVal)
 
-print(summary(fitModel))
 
 # Plot log-likelihood and BIC values
 ggplot(data.frame(numOfStates, logValues), aes(x = numOfStates, y = logValues)) + 
@@ -202,9 +217,7 @@ BIC(fitModel)
 print(summary(fitModel))
 
 # --- 6 states -----
-# Optimal state count for discrete data
-# LogLik: -5090.662
-# BIC: 10885.43
+
 model <- depmix(response = Global_active_power ~ 1
                 , data = tuesdayGlobalActivePower_discrete,
                 family = multinomial(),
