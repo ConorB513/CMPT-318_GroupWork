@@ -37,7 +37,8 @@ numerical <- dataset[c("Global_active_power", "Global_reactive_power", "Voltage"
 
 #conduct PCA
 pcs <- prcomp(numerical);
-summary(pcs);
+pcaFeatures <- pcs$x
+head(pcaFeatures);
 
 #plot PCA
 
