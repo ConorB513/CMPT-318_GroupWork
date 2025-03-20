@@ -1,9 +1,16 @@
+#CMPT 318 Group 7 Term Project Code
+
+# --- Install Packages ---
 install.packages('stats');
 library(stats);
 
 install.packages("zoo");
 library(zoo);
 
+install.packages("depmixS4");
+library(depmixS4);
+
+# --- Import Project Data ---
 dataset <- read.csv("./TermProjectData.txt");
 
 #1 - scale features - standardization with na values linearly interpolated
@@ -43,5 +50,99 @@ head(pcaFeatures);
 #plot PCA
 
 #xx% of the variance is accounted for with the first x PCs, use those going
+
+# --- Part 3: Training HMM Models ---
+
+# Convert Date column to Date format
+dataset$Date <- as.Date(dataset$Date, format="%d/%m/%Y");
+
+# Combine date and time with first three PCA features (PC1 to PC3)
+pcaSubset <- data.frame(Date = dataset$Date, Time = dataset$Time, 
+                        PC1 = pcaFeatures[,1], 
+                        PC2 = pcaFeatures[,2], 
+                        PC3 = pcaFeatures[,3]);
+
+# Add a column for the day of the week
+pcaSubset$Day <- weekdays(pcaSubset$Date)
+
+# Define date ranges
+training_start <- as.Date("16/12/2006", format="%d/%m/%Y");
+training_end <- as.Date("31/12/2008", format="%d/%m/%Y");
+testing_start <- as.Date("01/01/2009", format="%d/%m/%Y");
+testing_end <- as.Date("31/12/2009", format="%d/%m/%Y");
+
+# Separate 3 years for training and 1 year for testing
+trainingData <- subset(pcaSubset, Date >= training_start & Date <= training_end)
+testData <- subset(pcaSubset, Date >= testing_start & Date <= testing_end)
+
+# Filter only Fridays between 17:00:00 and 21:00:00
+trainingData <- subset(trainingData, Day == "Friday" & Time >= "17:00:00" & Time <= "21:00:00")
+testData <- subset(testData, Day == "Friday" & Time >= "17:00:00" & Time <= "21:00:00")
+
+# Round the data to the nearest half-integer and convert to factors
+trainingData_discrete <- trainingData
+trainingData_discrete$PC1 <- as.factor(round(trainingData_discrete$PC1 * 2) / 2)
+trainingData_discrete$PC2 <- as.factor(round(trainingData_discrete$PC2 * 2) / 2)
+trainingData_discrete$PC3 <- as.factor(round(trainingData_discrete$PC3 * 2) / 2)
+
+# ----- Training -----
+
+# Define the number of sequences (ntimes in rep())
+ntimes_val <- as.numeric(table(trainingData_discrete$Date))
+
+# Step 3: Train HMM models for states 4 to 20 using training data
+training_results <- list()  # Store model results
+
+for (states in 4:4) {
+  cat("\n--- Training HMM with", states, "states ---\n")
+  
+  # Define the HMM model with 3 response variables
+  model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1, PC3 ~ 1), 
+                  data = trainingData_discrete, 
+                  family = list(multinomial(), multinomial(), multinomial()),
+                  nstates = states, 
+                  ntimes = ntimes_val)
+  
+  # Fit the model
+  fitModel <- fit(model)
+  
+  # Store results
+  training_results[[as.character(states)]] <- list(
+    logLik = logLik(fitModel),
+    BIC = BIC(fitModel),
+    summary = summary(fitModel)
+  )
+  
+  # Print model evaluation metrics
+  cat("States:", states, " | logLik:", logLik(fitModel), " | BIC:", BIC(fitModel), "\n")
+}
+
+# ----- Testing -----
+
+# Round the data to the nearest half-integer and convert to factors
+testingData_discrete <- trainingData
+testingData_discrete$PC1 <- as.factor(round(testingData_discrete$PC1 * 2) / 2)
+testingData_discrete$PC2 <- as.factor(round(testingData_discrete$PC2 * 2) / 2)
+testingData_discrete$PC3 <- as.factor(round(testingData_discrete$PC3 * 2) / 2)
+
+ntimes_val_testing <- as.numeric(table(testingData_discrete$Date))
+
+# Step 4: Test HMM model for 18 states using training data
+
+cat("\n--- Training HMM with", states, "states ---\n")
+
+# Define the HMM model with 3 response variables
+model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1, PC3 ~ 1), 
+                data = testingData_discrete, 
+                family = list(multinomial(), multinomial(), multinomial()),
+                nstates = 18, 
+                ntimes = ntimes_val_testing)
+
+# Fit the model
+fitModel <- fit(model)
+
+# Print model evaluation metrics
+cat("States:", 18, " | logLik:", logLik(fitModel), " | BIC:", BIC(fitModel), "\n")
+
 
 
