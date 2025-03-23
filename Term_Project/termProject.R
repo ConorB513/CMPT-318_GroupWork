@@ -93,6 +93,7 @@ ntimes_val <- as.numeric(table(trainingData_discrete$Date))
 # Step 3: Train HMM models for states 4 to 20 using training data
 training_results <- list()  # Store model results
 
+
 for (states in 4:4) {
   cat("\n--- Training HMM with", states, "states ---\n")
   
@@ -120,7 +121,7 @@ for (states in 4:4) {
 # ----- Testing -----
 
 # Round the data to the nearest half-integer and convert to factors
-testingData_discrete <- trainingData
+testingData_discrete <- testData
 testingData_discrete$PC1 <- as.factor(round(testingData_discrete$PC1 * 2) / 2)
 testingData_discrete$PC2 <- as.factor(round(testingData_discrete$PC2 * 2) / 2)
 testingData_discrete$PC3 <- as.factor(round(testingData_discrete$PC3 * 2) / 2)
@@ -145,4 +146,59 @@ fitModel <- fit(model)
 cat("States:", 18, " | logLik:", logLik(fitModel), " | BIC:", BIC(fitModel), "\n")
 
 
+
+# --- Anomaly Detection --- 
+
+totalRows <- nrow(testingData_discrete)
+
+subsetSize <- ceiling(totalRows / 10)
+
+subsetLogLikelihoodValues <- c()
+
+set.seed(123)
+
+for (i in 1:10) {
+   cat("Iteration:", i, "\n")
+  
+
+  startIndex <- ((i - 1) * subsetSize) + 1
+  
+
+  endIndex <- min(i * subsetSize, totalRows)  
+  
+  
+  subset_data <- testingData_discrete[startIndex:endIndex, ]
+  
+ 
+  ntimes_val_subset <- as.numeric(table(subset_data$Date))
+  
+ 
+  model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1, PC3 ~ 1), 
+                  data = subset_data, 
+                  family = list(multinomial(), multinomial(), multinomial()),
+                  nstates = 18, 
+                  ntimes = ntimes_val_subset)
+  
+
+  fitModel <- fit(model)
+  
+  subsetLogLikelihoodValues[i] <- logLik(fitModel)
+  
+  cat("Subset:", i, ", logLik:", subsetLogLikelihoodValues[i], "\n")
+
+}
+
+
+# Define Y-axis ticks (adjust spacing)
+
+
+# Plot the sorted values
+plot(subsetLogLikelihoodValues, type = "o", col = "blue", pch = 16, xaxt = "n", 
+     xlab = "Index", ylab = "Value", 
+     main = "Sorted Values (Highest to Lowest)")
+axis(1, at = 1:length(subsetLogLikelihoodValues), labels = 1:length(subsetLogLikelihoodValues))
+
+print(subsetLogLikelihoodValues)
+
+print("Done!")
 
