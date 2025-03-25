@@ -93,8 +93,8 @@ ntimes_val <- as.numeric(table(trainingData_discrete$Date))
 # Step 3: Train HMM models for states 4 to 20 using training data
 training_results <- list()  # Store model results
 
-
-for (states in 4:4) {
+set.seed(42)
+for (states in 4:20) {
   cat("\n--- Training HMM with", states, "states ---\n")
   
   # Define the HMM model with 3 response variables
@@ -104,8 +104,8 @@ for (states in 4:4) {
                   nstates = states, 
                   ntimes = ntimes_val)
   
-  # Fit the model
-  fitModel <- fit(model)
+  # Fit the model, increase EM iterations, tighten convergence tolerance
+  fitModel <- fit(model, emcontrol = em.control(maxit = 1000, tol = 1e-8))
   
   # Store results
   training_results[[as.character(states)]] <- list(
@@ -129,8 +129,8 @@ testingData_discrete$PC3 <- as.factor(round(testingData_discrete$PC3 * 2) / 2)
 ntimes_val_testing <- as.numeric(table(testingData_discrete$Date))
 
 # Step 4: Test HMM model for 18 states using training data
-
-cat("\n--- Training HMM with", states, "states ---\n")
+set.seed(42)
+cat("\n--- Testing HMM with", states, "states ---\n")
 
 # Define the HMM model with 3 response variables
 model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1, PC3 ~ 1), 
@@ -139,12 +139,11 @@ model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1, PC3 ~ 1),
                 nstates = 18, 
                 ntimes = ntimes_val_testing)
 
-# Fit the model
-fitModel <- fit(model)
+# Fit the model, increase EM iterations, tighten convergence tolerance
+fitModel <- fit(model, emcontrol = em.control(maxit = 1000, tol = 1e-8))
 
 # Print model evaluation metrics
-cat("States:", 18, " | logLik:", logLik(fitModel), " | BIC:", BIC(fitModel), "\n")
-
+cat("States:", states, " | logLik:", logLik(fitModel), " | BIC:", BIC(fitModel), "\n")
 
 
 # --- Anomaly Detection --- 
@@ -155,7 +154,7 @@ subsetSize <- ceiling(totalRows / 10)
 
 subsetLogLikelihoodValues <- c()
 
-set.seed(123)
+set.seed(42)
 
 for (i in 1:10) {
    cat("Iteration:", i, "\n")
