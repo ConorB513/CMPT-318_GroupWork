@@ -59,8 +59,7 @@ dataset$Date <- as.Date(dataset$Date, format="%d/%m/%Y");
 # Combine date and time with first three PCA features (PC1 to PC3)
 pcaSubset <- data.frame(Date = dataset$Date, Time = dataset$Time, 
                         PC1 = pcaFeatures[,1], 
-                        PC2 = pcaFeatures[,2], 
-                        PC3 = pcaFeatures[,3]);
+                        PC2 = pcaFeatures[,2]);
 
 # Add a column for the day of the week
 pcaSubset$Day <- weekdays(pcaSubset$Date)
@@ -83,9 +82,11 @@ testData <- subset(testData, Day == "Friday" & Time >= "17:00:00" & Time <= "21:
 trainingData_discrete <- trainingData
 trainingData_discrete$PC1 <- as.factor(round(trainingData_discrete$PC1 * 2) / 2)
 trainingData_discrete$PC2 <- as.factor(round(trainingData_discrete$PC2 * 2) / 2)
-trainingData_discrete$PC3 <- as.factor(round(trainingData_discrete$PC3 * 2) / 2)
 
 # ----- Training -----
+
+#set seed to determine random init parameter selection
+set.seed(123)
 
 # Define the number of sequences (ntimes in rep())
 ntimes_val <- as.numeric(table(trainingData_discrete$Date))
@@ -93,14 +94,13 @@ ntimes_val <- as.numeric(table(trainingData_discrete$Date))
 # Step 3: Train HMM models for states 4 to 20 using training data
 training_results <- list()  # Store model results
 
-set.seed(42)
 for (states in 4:20) {
   cat("\n--- Training HMM with", states, "states ---\n")
   
   # Define the HMM model with 3 response variables
-  model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1, PC3 ~ 1), 
+  model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1), 
                   data = trainingData_discrete, 
-                  family = list(multinomial(), multinomial(), multinomial()),
+                  family = list(multinomial(), multinomial()),
                   nstates = states, 
                   ntimes = ntimes_val)
   
@@ -124,19 +124,17 @@ for (states in 4:20) {
 testingData_discrete <- testData
 testingData_discrete$PC1 <- as.factor(round(testingData_discrete$PC1 * 2) / 2)
 testingData_discrete$PC2 <- as.factor(round(testingData_discrete$PC2 * 2) / 2)
-testingData_discrete$PC3 <- as.factor(round(testingData_discrete$PC3 * 2) / 2)
 
 ntimes_val_testing <- as.numeric(table(testingData_discrete$Date))
 
 # Step 4: Test HMM model for 18 states using training data
-set.seed(42)
 cat("\n--- Testing HMM with", states, "states ---\n")
 
 # Define the HMM model with 3 response variables
-model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1, PC3 ~ 1), 
+model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1), 
                 data = testingData_discrete, 
-                family = list(multinomial(), multinomial(), multinomial()),
-                nstates = 18, 
+                family = list(multinomial(), multinomial()),
+                nstates = 20, 
                 ntimes = ntimes_val_testing)
 
 # Fit the model, increase EM iterations, tighten convergence tolerance
@@ -154,8 +152,6 @@ subsetSize <- ceiling(totalRows / 10)
 
 subsetLogLikelihoodValues <- c()
 
-set.seed(42)
-
 for (i in 1:10) {
    cat("Iteration:", i, "\n")
   
@@ -172,10 +168,10 @@ for (i in 1:10) {
   ntimes_val_subset <- as.numeric(table(subset_data$Date))
   
  
-  model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1, PC3 ~ 1), 
+  model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1), 
                   data = subset_data, 
-                  family = list(multinomial(), multinomial(), multinomial()),
-                  nstates = 18, 
+                  family = list(multinomial(), multinomial()),
+                  nstates =20, 
                   ntimes = ntimes_val_subset)
   
 
@@ -184,13 +180,9 @@ for (i in 1:10) {
   subsetLogLikelihoodValues[i] <- logLik(fitModel)
   
   cat("Subset:", i, ", logLik:", subsetLogLikelihoodValues[i], "\n")
-
 }
 
-
 # Define Y-axis ticks (adjust spacing)
-
-
 # Plot the sorted values
 plot(subsetLogLikelihoodValues, type = "o", col = "blue", pch = 16, xaxt = "n", 
      xlab = "Index", ylab = "Value", 
