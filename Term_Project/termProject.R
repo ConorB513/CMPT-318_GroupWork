@@ -1,6 +1,14 @@
 #CMPT 318 Group 7 Term Project Code
+#Members:
+#
+#Justinne Baltazar 301559449
+#Rashed Hadi 301469578
+#Sean Coloma 301440149
+#Conor Benson 301585511
 
-# --- Install Packages ---
+
+# --- Part 0: Install Packages and Import Project Data---
+
 install.packages('stats');
 library(stats);
 
@@ -10,10 +18,11 @@ library(zoo);
 install.packages("depmixS4");
 library(depmixS4);
 
-# --- Import Project Data ---
 dataset <- read.csv("./TermProjectData.txt");
 
-#1 - scale features - standardization with na values linearly interpolated
+# --- Part 1: Feature Scaling ----
+
+#standardization with na values linearly interpolated
 
 # - rule = 2 extends the first non na value to the beginning/end if it is na
 gap <- na.spline(dataset$Global_active_power);
@@ -38,7 +47,8 @@ sm3 <- na.spline(dataset$Sub_metering_3);
 dataset$Sub_metering_3 <- (sm3 - mean(sm3))/sd(sm3);
 
 
-#2 - principal component analysis
+# --- Part 2: Feature Engineering ----
+
 #extract only the numerical columns
 numerical <- dataset[c("Global_active_power", "Global_reactive_power", "Voltage", "Global_intensity", "Sub_metering_1", "Sub_metering_2", "Sub_metering_3")];
 
@@ -49,9 +59,8 @@ head(pcaFeatures);
 
 #plot PCA
 
-#xx% of the variance is accounted for with the first x PCs, use those going
 
-# --- Part 3: Training HMM Models ---
+# --- Part 3: HMM Training and Testing ---
 
 # Convert Date column to Date format
 dataset$Date <- as.Date(dataset$Date, format="%d/%m/%Y");
@@ -60,6 +69,7 @@ dataset$Date <- as.Date(dataset$Date, format="%d/%m/%Y");
 pcaSubset <- data.frame(Date = dataset$Date, Time = dataset$Time, 
                         PC1 = pcaFeatures[,1], 
                         PC2 = pcaFeatures[,2]);
+
 
 # Add a column for the day of the week
 pcaSubset$Day <- weekdays(pcaSubset$Date)
@@ -74,14 +84,17 @@ testing_end <- as.Date("31/12/2009", format="%d/%m/%Y");
 trainingData <- subset(pcaSubset, Date >= training_start & Date <= training_end)
 testData <- subset(pcaSubset, Date >= testing_start & Date <= testing_end)
 
+
 # Filter only Fridays between 17:00:00 and 21:00:00
 trainingData <- subset(trainingData, Day == "Friday" & Time >= "17:00:00" & Time <= "21:00:00")
 testData <- subset(testData, Day == "Friday" & Time >= "17:00:00" & Time <= "21:00:00")
+
 
 # Round the data to the nearest half-integer and convert to factors
 trainingData_discrete <- trainingData
 trainingData_discrete$PC1 <- as.factor(round(trainingData_discrete$PC1 * 2) / 2)
 trainingData_discrete$PC2 <- as.factor(round(trainingData_discrete$PC2 * 2) / 2)
+
 
 # ----- Training -----
 
@@ -91,13 +104,12 @@ set.seed(123)
 # Define the number of sequences (ntimes in rep())
 ntimes_val <- as.numeric(table(trainingData_discrete$Date))
 
-# Step 3: Train HMM models for states 4 to 20 using training data
-training_results <- list()  # Store model results
+# Train HMM models for states 4 to 20 using training data
+training_results <- list()
 
-for (states in 4:20) {
+for (states in 18:18) {
   cat("\n--- Training HMM with", states, "states ---\n")
   
-  # Define the HMM model with 3 response variables
   model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1), 
                   data = trainingData_discrete, 
                   family = list(multinomial(), multinomial()),
@@ -107,18 +119,18 @@ for (states in 4:20) {
   # Fit the model, increase EM iterations, tighten convergence tolerance
   fitModel <- fit(model, emcontrol = em.control(maxit = 1000, tol = 1e-8))
   
-  # Store results
+  summary(fitModel)
+  
   training_results[[as.character(states)]] <- list(
     logLik = logLik(fitModel),
     BIC = BIC(fitModel),
     summary = summary(fitModel)
   )
   
-  # Print model evaluation metrics
   cat("States:", states, " | logLik:", logLik(fitModel), " | BIC:", BIC(fitModel), "\n")
 }
 
-# ----- Testing -----
+# ----- Testing ----- Test HMM model for 15, 18 and 20 states using training data
 
 # Round the data to the nearest half-integer and convert to factors
 testingData_discrete <- testData
@@ -127,69 +139,171 @@ testingData_discrete$PC2 <- as.factor(round(testingData_discrete$PC2 * 2) / 2)
 
 ntimes_val_testing <- as.numeric(table(testingData_discrete$Date))
 
-# Step 4: Test HMM model for 18 states using training data
-cat("\n--- Testing HMM with", states, "states ---\n")
 
-# Define the HMM model with 3 response variables
+cat("\n--- Testing HMM with 15 states ---\n")
+
+
+model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1), 
+                data = testingData_discrete, 
+                family = list(multinomial(), multinomial()),
+                nstates = 15, 
+                ntimes = ntimes_val_testing)
+
+
+fitModel <- fit(model, emcontrol = em.control(maxit = 1000, tol = 1e-8))
+
+
+cat("States:", 15, " | logLik:", logLik(fitModel), " | BIC:", BIC(fitModel), "\n")
+
+
+cat("\n--- Testing HMM with 18 states ---\n")
+
+
+model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1), 
+                data = testingData_discrete, 
+                family = list(multinomial(), multinomial()),
+                nstates = 18, 
+                ntimes = ntimes_val_testing)
+
+
+fitModel <- fit(model, emcontrol = em.control(maxit = 1000, tol = 1e-8))
+
+cat("States:", 18, " | logLik:", logLik(fitModel), " | BIC:", BIC(fitModel), "\n")
+
+cat("\n--- Testing HMM with 20 states ---\n")
+
 model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1), 
                 data = testingData_discrete, 
                 family = list(multinomial(), multinomial()),
                 nstates = 20, 
                 ntimes = ntimes_val_testing)
 
-# Fit the model, increase EM iterations, tighten convergence tolerance
+
 fitModel <- fit(model, emcontrol = em.control(maxit = 1000, tol = 1e-8))
 
-# Print model evaluation metrics
-cat("States:", states, " | logLik:", logLik(fitModel), " | BIC:", BIC(fitModel), "\n")
+cat("States:", 20, " | logLik:", logLik(fitModel), " | BIC:", BIC(fitModel), "\n")
 
 
-# --- Anomaly Detection --- 
+
+# --- Part 4:  Anomaly Detection --- 
 
 totalRows <- nrow(testingData_discrete)
 
+#Get size of subset by dividing and rounding up
 subsetSize <- ceiling(totalRows / 10)
-
 subsetLogLikelihoodValues <- c()
+normalizedLogLikelihoodValues <- c()
+
+#Store the 10 ranges 
+dateRanges <- character(10)
+
+#Store the size of each range
+subsetSizes <- numeric(10)
 
 for (i in 1:10) {
-   cat("Iteration:", i, "\n")
+  cat("Iteration:", i, "\n")
   
-
+  #Subtract by 1 as R uses 1-based indexing 
   startIndex <- ((i - 1) * subsetSize) + 1
   
-
   endIndex <- min(i * subsetSize, totalRows)  
-  
   
   subset_data <- testingData_discrete[startIndex:endIndex, ]
   
- 
   ntimes_val_subset <- as.numeric(table(subset_data$Date))
   
- 
+  #Get the start and end data of the period 
+  startDate <- as.character(min(subset_data$Date))  
+  endDate <- as.character(max(subset_data$Date))  
+  
+  dateRanges[i] <- paste(startDate, "to", endDate)
+  
+  #Calculate likelihood with optimal HMM
   model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1), 
                   data = subset_data, 
                   family = list(multinomial(), multinomial()),
-                  nstates =20, 
+                  nstates = 15, 
                   ntimes = ntimes_val_subset)
   
-
   fitModel <- fit(model)
   
   subsetLogLikelihoodValues[i] <- logLik(fitModel)
+  subsetSizes[i] <- nrow(subset_data)
   
-  cat("Subset:", i, ", logLik:", subsetLogLikelihoodValues[i], "\n")
+  # Normalize by dividing log-likelihood by subset size
+  normalizedLogLikelihoodValues[i] <- subsetLogLikelihoodValues[i] / nrow(subset_data)
+  
+  cat("\n--- Period", i, "(", startDate, "to", endDate, ") ---\n",
+      "Subset:", i, ", logLik:", subsetLogLikelihoodValues[i], 
+      ", Subset Size:", nrow(subset_data), 
+      ", Normalized logLik:", normalizedLogLikelihoodValues[i], "\n")
 }
 
-# Define Y-axis ticks (adjust spacing)
-# Plot the sorted values
-plot(subsetLogLikelihoodValues, type = "o", col = "blue", pch = 16, xaxt = "n", 
-     xlab = "Index", ylab = "Value", 
-     main = "Sorted Values (Highest to Lowest)")
-axis(1, at = 1:length(subsetLogLikelihoodValues), labels = 1:length(subsetLogLikelihoodValues))
-
+# Print results
+print(dateRanges)
 print(subsetLogLikelihoodValues)
+print(normalizedLogLikelihoodValues)
 
-print("Done!")
+
+# Original Log-Likelihood Plot
+plot(subsetLogLikelihoodValues, 
+     type = "o", col = "blue", pch = 16, 
+     xlab = "Period", ylab = "Log-Likelihood",
+     main = "Log-Likelihood Values Across 2009 Periods")
+
+
+#Used ggplot2 for a more robust plot 
+install.packages("ggplot2")
+library(ggplot2)
+
+data <- data.frame(
+  Period = 1:length(normalizedLogLikelihoodValues),
+  Normalized_LL = normalizedLogLikelihoodValues
+)
+
+#Plot normalized normalized likelihoods 
+ggplot(data, aes(x = Period, y = Normalized_LL)) +
+  geom_line(color = "black") +                
+  geom_point(color = "black", size = 3) +   
+  geom_text(aes(label = round(Normalized_LL, 3)), hjust = -0.25, vjust = 0, size = 3) + 
+  geom_hline(yintercept = -1.85, color = "blue", linetype = "dashed", size = 1.2) +  
+  labs(title = "Normalized Log-Likelihood Values Across 2009 Periods", x = "Period", y = "Normalized Log-Likelihood") +  
+  scale_x_continuous(breaks = 1:10) + 
+  theme(
+    plot.margin = margin(10, 10, 10, 10), 
+    panel.border = element_rect(color = "black", fill = NA, size = 1),  
+    plot.background = element_rect(color = "black", fill = "white", size = 2),  
+    panel.background = element_blank()  ) + 
+  annotate("text", x = 5, y = -2, label = "Training Log-Likelihood (-1.85)", 
+           color = "blue", size = 4, fontface = "italic", hjust = 0, vjust = 1)
+
+
+#Calculate absolute deviations 
+
+deviations <- abs(-1.85 - normalizedLogLikelihoodValues)
+
+
+# Create a data frame with Period number and Deviation
+data <- data.frame(Period = 1:length(normalizedLogLikelihoodValues), 
+                   Deviation = deviations)
+
+# Find the period with the largest deviation
+max_deviation_period <- data$Period[which.max(data$Deviation)]
+
+# Plot deviations
+library(ggplot2)
+ggplot(data, aes(x = Period, y = Deviation)) +
+  geom_bar(stat = "identity", fill = "lightgrey") +         
+  geom_point(aes(x = Period, y = Deviation), color = "black", size = 3) + 
+  geom_text(aes(label = round(Deviation, 3)), hjust = -0.3, vjust = -0.5, size = 3) + 
+  geom_vline(xintercept = max_deviation_period, color = "black", linetype = "dashed", size = 1) +
+  labs(title = "Deviation from Training Likelihood",x = "Period", y = "Deviation ") +
+  scale_x_continuous(breaks = 1:10) + 
+  theme(
+    plot.margin = margin(10, 10, 10, 10), 
+    panel.border = element_rect(color = "black", fill = NA, size = 1),  
+    plot.background = element_rect(color = "black", fill = "white", size = 2),  
+    panel.background = element_blank()
+  ) 
+
 
