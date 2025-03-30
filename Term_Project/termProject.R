@@ -191,42 +191,50 @@ fitModel <- fit(model, emcontrol = em.control(maxit = 1000, tol = 1e-8))
 
 cat("States:", 20, " | logLik:", logLik(fitModel), " | BIC:", BIC(fitModel), "\n")
 
-
+print()
 
 # --- Part 4:  Anomaly Detection --- 
 
-totalRows <- nrow(testingData_discrete)
+periodRanges <- list(
+  c(1, 964),         # Period 1:  4 Fridays
+  c(965, 2169),      # Period 2:  5 Fridays
+  c(2170, 3374),     # Period 3:  5 Fridays
+  c(3375, 4579),     # Period 4:  5 Fridays
+  c(4580, 5784),     # Period 5:  5 Fridays
+  c(5785, 6989),     # Period 6:  5 Fridays
+  c(6990, 8194),     # Period 7:  5 Fridays
+  c(8195, 9399),     # Period 8:  5 Fridays
+  c(9400, 10604),    # Period 9:  5 Fridays
+  c(10605, 11568)    # Period 10: 4 Fridays
+)
 
-#Get size of subset by dividing and rounding up
-subsetSize <- ceiling(totalRows / 10)
+# Initialize vectors to store results
 subsetLogLikelihoodValues <- c()
 normalizedLogLikelihoodValues <- c()
 
-#Store the 10 ranges 
+# Store the 10 ranges 
 dateRanges <- character(10)
 
-#Store the size of each range
+# Store the size of each range
 subsetSizes <- numeric(10)
 
 for (i in 1:10) {
   cat("Iteration:", i, "\n")
   
-  #Subtract by 1 as R uses 1-based indexing 
-  startIndex <- ((i - 1) * subsetSize) + 1
-  
-  endIndex <- min(i * subsetSize, totalRows)  
+  startIndex <- ranges[[i]][1]
+  endIndex <- ranges[[i]][2]
   
   subset_data <- testingData_discrete[startIndex:endIndex, ]
   
   ntimes_val_subset <- as.numeric(table(subset_data$Date))
   
-  #Get the start and end data of the period 
+  # Get the start and end date of the period
   startDate <- as.character(min(subset_data$Date))  
   endDate <- as.character(max(subset_data$Date))  
   
   dateRanges[i] <- paste(startDate, "to", endDate)
   
-  #Calculate likelihood with optimal HMM
+  # Calculate likelihood with optimal HMM
   model <- depmix(response = list(PC1 ~ 1, PC2 ~ 1), 
                   data = subset_data, 
                   family = list(multinomial(), multinomial()),
@@ -253,6 +261,7 @@ print(subsetLogLikelihoodValues)
 print(normalizedLogLikelihoodValues)
 
 
+
 # Original Log-Likelihood Plot
 plot(subsetLogLikelihoodValues, 
      type = "o", col = "blue", pch = 16, 
@@ -260,58 +269,67 @@ plot(subsetLogLikelihoodValues,
      main = "Log-Likelihood Values Across 2009 Periods")
 
 
-#Used ggplot2 for a more robust plot 
+
 install.packages("ggplot2")
 library(ggplot2)
 
 data <- data.frame(
-  Period = 1:length(normalizedLogLikelihoodValues),
-  Normalized_LL = normalizedLogLikelihoodValues
+  Period = 1:10,
+  normalizedLikelihoods = normalizedLogLikelihoodValues
 )
 
 #Plot normalized normalized likelihoods 
-ggplot(data, aes(x = Period, y = Normalized_LL)) +
-  geom_line(color = "black") +                
+ggplot(data, aes(x = Period, y = normalizedLikelihoods)) +
+  geom_line(color = "black", linetype = "dotted") +                
   geom_point(color = "black", size = 3) +   
-  geom_text(aes(label = round(Normalized_LL, 3)), hjust = -0.25, vjust = 0, size = 3) + 
-  geom_hline(yintercept = -1.85, color = "blue", linetype = "dashed", size = 1.2) +  
+  geom_text(aes(label = round(normalizedLikelihoods, 2)), hjust = -0.25, vjust = 0, size = 3) + 
+  geom_hline(yintercept = -1.855, color = "blue", linetype = "dashed", size = 1.2) +  
   labs(title = "Normalized Log-Likelihood Values Across 2009 Periods", x = "Period", y = "Normalized Log-Likelihood") +  
   scale_x_continuous(breaks = 1:10) + 
+  scale_y_continuous(breaks = seq(-2.5, -0.75, by = 0.25)) +
   theme(
     plot.margin = margin(10, 10, 10, 10), 
     panel.border = element_rect(color = "black", fill = NA, size = 1),  
     plot.background = element_rect(color = "black", fill = "white", size = 2),  
     panel.background = element_blank()  ) + 
-  annotate("text", x = 5, y = -2, label = "Training Log-Likelihood (-1.85)", 
+  annotate("text", x = 5, y = -2, label = "Training Log-Likelihood (-1.855)", 
            color = "blue", size = 4, fontface = "italic", hjust = 0, vjust = 1)
 
 
+#Plotting Deviation Data
+
 #Calculate absolute deviations 
+periodDeviations <- abs(-1.855 - normalizedLogLikelihoodValues)
 
-deviations <- abs(-1.85 - normalizedLogLikelihoodValues)
 
-
-# Create a data frame with Period number and Deviation
-data <- data.frame(Period = 1:length(normalizedLogLikelihoodValues), 
-                   Deviation = deviations)
+# Create a data frame with periods and absolute deviation
+deviationData <- data.frame(Period = 1:10, 
+                            periodDeviations = periodDeviations)
 
 # Find the period with the largest deviation
-max_deviation_period <- data$Period[which.max(data$Deviation)]
+maxDeviationPeriod <- deviationData$Period[which.max(deviationData$periodDeviations)]
 
-# Plot deviations
-library(ggplot2)
-ggplot(data, aes(x = Period, y = Deviation)) +
-  geom_bar(stat = "identity", fill = "lightgrey") +         
-  geom_point(aes(x = Period, y = Deviation), color = "black", size = 3) + 
-  geom_text(aes(label = round(Deviation, 3)), hjust = -0.3, vjust = -0.5, size = 3) + 
-  geom_vline(xintercept = max_deviation_period, color = "black", linetype = "dashed", size = 1) +
-  labs(title = "Deviation from Training Likelihood",x = "Period", y = "Deviation ") +
+#Calculate the mean deviation of the periods
+meanDeviation <- mean(deviationData$periodDeviations)
+
+#Create a plot of the deviation data
+ggplot(deviationData, aes(x = Period, y =  periodDeviations, fill = (Period == maxDeviationPeriod))) +
+  geom_bar(stat = "identity") +        
+  labs(title = "Period Deviation from Training Likelihood", x = "Period", y = "Absolute Deviation") +
   scale_x_continuous(breaks = 1:10) + 
+  scale_fill_manual(values = c("lightgrey", "red"), guide = "none") +  # Color all bars gray except max deviation period
   theme(
     plot.margin = margin(10, 10, 10, 10), 
     panel.border = element_rect(color = "black", fill = NA, size = 1),  
     plot.background = element_rect(color = "black", fill = "white", size = 2),  
     panel.background = element_blank()
-  ) 
-
-
+  )+ 
+  annotate("point", x = 8.7, y = max(deviationData$periodDeviations) - 0.075, color = "red", size = 3) + 
+  annotate("text", x = 8.8, y = max(deviationData$periodDeviations) - 0.075, label = "Max Deviation (0.75)", 
+           color = "black", size = 4, fontface = "italic", hjust = 0, vjust = 0.5)+
+  
+  geom_hline(yintercept = meanDeviation, color = "green", linetype = "dashed", size = 1) +
+  annotate("point", x = 8.7, y = max(deviationData$periodDeviations) - 0.15, color = "green", size = 3) + 
+  annotate("text", x = 8.8, y = max(deviationData$periodDeviations) - 0.15, 
+           label = "Mean Deviation (0.369)", 
+           color = "black", size = 4, fontface = "italic", hjust = 0, vjust = 0.5)
