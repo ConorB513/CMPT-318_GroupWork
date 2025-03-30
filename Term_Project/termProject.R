@@ -18,13 +18,16 @@ library(zoo);
 install.packages("depmixS4");
 library(depmixS4);
 
+install.packages("ggfortify");
+library(ggfortify);
+
 dataset <- read.csv("./TermProjectData.txt");
 
 # --- Part 1: Feature Scaling ----
 
-#standardization with na values linearly interpolated
+#standardization with na values spline interpolated
 
-# - rule = 2 extends the first non na value to the beginning/end if it is na
+# - spline interpolation works at NA endpoints
 gap <- na.spline(dataset$Global_active_power);
 dataset$Global_active_power <- (gap-mean(gap))/sd(gap);
 
@@ -55,9 +58,14 @@ numerical <- dataset[c("Global_active_power", "Global_reactive_power", "Voltage"
 #conduct PCA
 pcs <- prcomp(numerical);
 pcaFeatures <- pcs$x
-head(pcaFeatures);
+summary(pcs);
 
-#plot PCA
+#plot PCA information
+#plotting PCS projected onto the PC1, PC2 axes
+autoplot(pcs);
+
+#plotting Cummulative Variance of PCs
+plot(cumsum(pcs$sdev^2/sum(pcs$sdev^2)), type = "b", ylim=0:1, xlab = "# of PCs used", ylab = "% of Variance Captured");
 
 
 # --- Part 3: HMM Training and Testing ---
